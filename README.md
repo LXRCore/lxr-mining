@@ -2,6 +2,14 @@
 
 **LXR-Mining** is an immersive and dynamic mining system for **LXRCore**, offering players the ability to mine, refine, and sell valuable resources in your RedM server. Built with customization in mind, LXR-Mining allows for easy setup and management of mining spots, processing stations, and sell points.
 
+![Version](https://img.shields.io/badge/Version-1.0.0-brightgreen)  
+![Build](https://img.shields.io/badge/Build-Stable-blue)
+![Framework](https://img.shields.io/badge/Framework-LXRCore-blue)
+![License](https://img.shields.io/badge/License-MIT-green)  
+![Contributions Welcome](https://img.shields.io/badge/Contributions-Welcome-orange)  
+![Platform](https://img.shields.io/badge/Platform-RedM-black)  
+![Awesome](https://img.shields.io/badge/Made%20with%20❤️%20by-iBoss-blue)
+
 ---
 
 ## Features ✨
