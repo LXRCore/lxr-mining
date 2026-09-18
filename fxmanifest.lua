@@ -1,55 +1,52 @@
 --[[
-    ██╗     ██╗  ██╗██████╗        ███╗   ███╗██╗███╗   ██╗██╗███╗   ██╗ ██████╗
-    ██║     ╚██╗██╔╝██╔══██╗      ████╗ ████║██║████╗  ██║██║████╗  ██║██╔════╝
-    ██║      ╚███╔╝ ██████╔╝█████╗██╔████╔██║██║██╔██╗ ██║██║██╔██╗ ██║██║  ███╗
-    ██║      ██╔██╗ ██╔══██╗╚════╝██║╚██╔╝██║██║██║╚██╗██║██║██║╚██╗██║██║   ██║
-    ███████╗██╔╝ ██╗██║  ██║      ██║ ╚═╝ ██║██║██║ ╚████║██║██║ ╚████║╚██████╔╝
-    ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝      ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═══╝ ╚═════╝
+    LXR Core - Mining
 
-    🐺 LXR Mining System — The Land of Wolves
+    Brand:       LXRCore — Lux Empire eXperience RedM Core
+    Product:     wolves.land / The Land of Wolves
+    Developer:   iBoss21 / LXRCore
+    Website:     https://www.lxrcore.com
+    Discord:     https://discord.gg/ZHMKVYyhBa (development)
+    GitHub:      https://github.com/LXRCore
 
-    An immersive, multi-framework mining resource for RedM.
-    Players mine at designated quarry locations, process raw ore, and sell
-    refined materials through a vendor NPC — all with full framework support.
+    Version: 3.0.0
+    Performance Target: 0.00 ms idle
 
-    ═══════════════════════════════════════════════════════════════════════════════
-    SERVER INFORMATION
-    ═══════════════════════════════════════════════════════════════════════════════
+    Framework Support:
+    - LXR Core v3 (Native — GetCoreObject / GetLXR)
 
-    Server:      The Land of Wolves 🐺
-    Developer:   iBoss21 / The Lux Empire
-    Website:     https://www.wolves.land
-    Discord:     https://discord.gg/CrKcWdfd3A
-    Store:       https://theluxempire.tebex.io
-
-    ═══════════════════════════════════════════════════════════════════════════════
-
-    Version:     1.0.0
-    Framework:   LXR-Core (Primary) · RSG-Core · VORP Core
-
-    ═══════════════════════════════════════════════════════════════════════════════
-    CREDITS
-    ═══════════════════════════════════════════════════════════════════════════════
-
-    Script Author: iBoss21 / The Lux Empire for The Land of Wolves
-
-    © 2026 iBoss21 / The Lux Empire | wolves.land | All Rights Reserved
+    © 2026 iBoss21 / LXRCore | lxrcore.com | All Rights Reserved
 ]]
 
 fx_version 'cerulean'
-game       'rdr3'
-
+game 'rdr3'
 rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aware my resources *will* become incompatible once RedM ships.'
+lua54 'yes'
 
-name        'lxr-mining'
-author      'iBoss21 / The Lux Empire | wolves.land'
-description '🐺 LXR Mining System — The Land of Wolves'
-version     '1.0.0'
-lua54       'yes'
+name 'lxr-mining'
+author 'iBoss21 / LXRCore'
+description 'LXRCore v3 mining: veins with server-kept stock, weighted ore tables, the pan on the gravel bars'
+version '3.0.0'
+repository 'https://github.com/LXRCore/lxr-mining'
 
-client_scripts { 'client/*.lua' }
+shared_scripts {
+    'shared/locale.lua',
+    'locales/*.lua',
+    'config.lua',
+    'shared/rules.lua',
+}
 
-server_scripts { 'server/*.lua' }
+client_script 'client/main.lua'
+server_script 'server/main.lua'
 
-shared_scripts { '@lxr-core/shared/locale.lua', 'config.lua', 'locales/*.lua' }
+ui_page 'html/index.html'
 
+files {
+    'html/index.html',
+    'html/lxr-ui.css',
+    'html/style.css',
+    'html/fonts/*.woff2',
+    'html/app.js',
+    'html/img/*.png',
+}
+
+dependencies { 'lxr-core', 'lxr-interact' }

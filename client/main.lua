@@ -1,233 +1,91 @@
---[[
-    🐺 LXR Mining System — client/main.lua
-    ═══════════════════════════════════════════════════════════════════════════════
-    Server:    The Land of Wolves 🐺
-    Developer: iBoss21 / The Lux Empire
-    Website:   https://www.wolves.land
-    Discord:   https://discord.gg/CrKcWdfd3A
-    Store:     https://theluxempire.tebex.io
-    ═══════════════════════════════════════════════════════════════════════════════
-    © 2026 iBoss21 / The Lux Empire | wolves.land | All Rights Reserved
-]]
+--[[ ═══════════════════════════════════════════════════════════════════════════
+     LXR-MINING — Client: the veins and the bars, the swing, the vein card
+     © 2026 iBoss21 / LXRCore — All Rights Reserved
+     ═══════════════════════════════════════════════════════════════════════════ ]]
 
-local MiningLocation = {}
+local LXRCore = exports['lxr-core']:GetCoreObject()
+local LXR = exports['lxr-core']:GetLXR()
+local M = LXRMining
+local N = Citizen.InvokeNative
+local busy, nearVein = false, nil
+local veins = M.Veins()
 
+local function toast(key, kind, vars) LXRCore.Notify(Lang:t(key, vars), kind or 'info') end
+local function page(action, payload) SendNUIMessage({ action = action, payload = payload, brand = LXRCore.Brand, lang = Config.Lang, locale = Lang.bundle() }) end
+local function work(scenario, ms)
+    busy = true
+    local ped = PlayerPedId()
+    N(0x524B54361229154F, ped, joaat(scenario), ms, true, false, false, false)
+    Wait(ms)
+    ClearPedTasks(ped)
+    busy = false
+end
+local function mineOf(v) for _, m in ipairs(Config.Mines) do if m.id == v.mine then return m end end end
+local function card(v)
+    local m = mineOf(v)
+    page('show', { id = v.id, mine = m and m.label or v.mine, table = v.table, left = GlobalState['mine:' .. v.id] or v.charges, charges = v.charges })
+end
+local function report(res)
+    if not res.found then return toast('info.nothing', 'info') end
+    if res.heavy then return toast('error.heavy', 'warning', { label = res.label }) end
+    toast('info.found', 'success', { amount = res.amount, label = res.label })
+end
 
---#region Functions
+local function swing(v)
+    if busy then return end
+    work(Config.Work.swingScenario, Config.Work.swingMs)
+    local ok, res, extra = LXR.RPC.Server('lxr-mining:swing', v.id)
+    if not ok then return toast('error.' .. tostring(res), 'error', { label = extra }) end
+    report(res)
+    if nearVein == v.id then card(v) end
+end
+local function pan(p)
+    if busy then return end
+    work(Config.Work.panScenario, Config.Work.panMs)
+    local ok, res, extra = LXR.RPC.Server('lxr-mining:pan', p.id)
+    if not ok then return toast('error.' .. tostring(res), 'error', { label = extra }) end
+    report(res)
+end
 
-function AddBlipForCoords(blipname, bliphash, coords)
-	local blip = Citizen.InvokeNative(0x554D9D53F696D002, 1664425300, coords)
-	SetBlipSprite(blip, bliphash, true)
-	SetBlipScale(blip, 0.2)
-    if blipname then
-        Citizen.InvokeNative(0x9CB1A1623062F402, blip, blipname)
+CreateThread(function()
+    while GetResourceState('lxr-interact') ~= 'started' do Wait(1000) end
+    for id, v in pairs(veins) do
+        exports['lxr-interact']:AddPoint('lxr-mining:' .. id, v.coords, { label = Lang:t('table.' .. v.table), distance = Config.Security.promptDistance, options = {
+            { label = Lang:t('ui.swing'), key = 'J', item = Config.Work.pick, canInteract = function() return not busy and (GlobalState['mine:' .. id] or 1) > 0 end, onSelect = function() swing(v) end },
+        }})
     end
-end
-
-local function IsWeaponLantern(weaponhash)
-    return Citizen.InvokeNative(0x79407D33328286C6, weaponhash)
-end
-
-local function GetPedCurrentHeldWeapon(ped)
-    return Citizen.InvokeNative(0x8425C5F057012DAB, ped)
-end
-
-local function OpenMenu(name)
-    local options = {}
-    local inputs = {}
-
-    -- Check if Config.Peds[name].Items is not empty
-    if next(Config.Peds[name].Items) then
-        for item, _ in pairs(Config.Peds[name].Items) do
-            if Config.CollectItems then
-                local amount = exports['lxr-inventory']:GetItemAmount(item)
-                if amount then
-                    table.insert(options, {value = item..' : '..amount, text = string.upper(item)..' : '..amount..' (QTY)'})
-                end
-            else
-                table.insert(options, {value = item, text = string.upper(item)..' (SELL)'})
-            end
+    for _, p in ipairs(Config.Pans) do
+        exports['lxr-interact']:AddPoint('lxr-mining:pan:' .. p.id, p.coords, { label = p.label, distance = Config.Security.promptDistance, options = {
+            { label = Lang:t('ui.pan'), key = 'J', item = Config.Work.pan, canInteract = function() return not busy end, onSelect = function() pan(p) end },
+        }})
+    end
+    for _, m in ipairs(Config.Mines) do
+        if m.blip then
+            local b = N(0x554D9D53F696D002, 1664425300, m.coords.x, m.coords.y, m.coords.z)
+            if b and b ~= 0 then N(0x74F74D3207ED525C, b, joaat('blip_mine'), true) N(0x9CB1A1623062F402, b, m.label) end
         end
     end
-
-    -- Check if Config.Peds[name].BuyableItems is not empty
-    if next(Config.Peds[name].BuyableItems) then
-        for item, _ in pairs(Config.Peds[name].BuyableItems) do
-            table.insert(options, {value = item, text = string.upper(item)..' (BUY)'})
-        end
-    end
-
-    if #options == 0 then
-        print("no options avaible for ped "..name) return
-    end
-
-    -- Create inputs based on the options generated
-    if Config.CollectItems then
-        if next(Config.Peds[name].Items) and next(Config.Peds[name].BuyableItems) or next(Config.Peds[name].BuyableItems) then
-            inputs = {
-                {
-                    text = Lang:t('menu.select'),
-                    name = "SellGoodsCol",
-                    type = "select",
-                    options = options
-                },
-                {
-                    text = Lang:t('menu.amount'),
-                    name = "ItemAmountCol",
-                    type = "number",
-                    isRequired = false
-                }
-            }
-        else
-            if next(Config.Peds[name].Items) then
-                inputs = {
-                    {
-                        text = Lang:t('menu.select'),
-                        name = "SellGoodsCol",
-                        type = "select",
-                        options = options
-                    }
-                }
-            end
-        end
-    else
-        inputs = {
-            {
-                text = Lang:t('menu.select'),
-                name = "SellGoodsNc",
-                type = "select",
-                options = options
-            },
-            {
-                text = Lang:t('menu.amount'),
-                name = "ItemAmountNc",
-                type = "number",
-                isRequired = true
-            }
-        }
-    end
-
-    local dialog = exports['lxr-input']:ShowInput({
-        header = name..'-Shop',
-        submitText = "Submit",
-        inputs = inputs,
-    })
-
-    if dialog == nil then return end
-    local values = {}
-    for _, object in pairs(dialog) do
-        if object ~= "" then
-            for value in string.gmatch(object, "[^:%s]+") do
-                table.insert(values, value)
-            end
-        end
-    end
-    if next(values) == nil then return end
-    local itemType, itemAmount = values[1], values[2]
-    local buyPrice = Config.Peds[name].Items[itemType] or Config.Peds[name].BuyableItems[itemType]
-    if itemAmount == nil then
-        exports['lxr-core']:Notify(2, Lang:t('error.amount', {text = itemType}), 5000) return
-    end
-    if Config.Peds[name].BuyableItems[itemType] then
-        TriggerServerEvent('lxr-mining:server:BuyItem', itemType, itemAmount, buyPrice)
-    else
-        TriggerServerEvent('lxr-mining:server:SellItem', itemType, itemAmount, buyPrice)
-    end
-
-end
-
-local function StartMining(data)
-    local MiningPoint = data
-    if MiningLocation[MiningPoint] == nil or next(MiningLocation[MiningPoint]) == nil then
-        MiningLocation[MiningPoint] = {IsMined = false}
-    end
-    if not MiningLocation[MiningPoint].IsMined then
-        exports['lxr-core']:TriggerCallback('LXRCore:HasItem', function(HasItem)
-            if HasItem then
-                local PedId = PlayerPedId()
-                SetCurrentPedWeapon(PedId, `WEAPON_UNARMED`, true)
-                TaskStartScenarioInPlace(PedId, GetHashKey('WORLD_HUMAN_PICKAXE_WALL'), -1, true, false, false, false)
-                exports['lxr-core']:Progressbar("start_mining", Lang:t('mining.progress'), Config.MiningTimer, false, true, {
-                    disableMovement = true,
-                    disableCarMovement = true,
-                    disableMouse = false,
-                    disableCombat = true,
-                },
-                {
-                    animDict = {},
-                    anim = {},
-                    flags = {},
-                }, {}, {}, function() -- Done
-                    Wait(1000)
-                    ClearPedTasks(PedId)
-                    SetCurrentPedWeapon(PedId, `WEAPON_UNARMED`, true)
-                    MiningLocation[MiningPoint] = {IsMined = true}
-                    TriggerServerEvent('lxr-mining:server:ReceivedItem')
-                end, function() -- Cancel
-                    Wait(1000)
-                    ClearPedTasks(PedId)
-                    SetCurrentPedWeapon(PedId, `WEAPON_UNARMED`, true)
-                end)
-            else
-                exports['lxr-core']:Notify(3, Lang:t('error.pickaxe'), 5000)
-            end
-        end,  { ['pickaxe'] = 1 })
-    else
-        exports['lxr-core']:Notify(3, Lang:t('error.mined'), 5000)
-    end
-end
-
---#endregion
-
-RegisterNetEvent('lxr-mining:client:Mining', function (location)
-    StartMining(location)
 end)
 
-RegisterNetEvent('lxr-mining:client:OpenMenu', function (name)
-    OpenMenu(name)
-end)
-
-
-
---#region Threads
-
-Citizen.CreateThread(function()
-	while true do
-		Wait(Config.RefreshTimer)
-        MiningLocation = {}
-	end
-end)
-
-Citizen.CreateThread(function ()
+-- the vein card follows the nearest vein
+CreateThread(function()
     while true do
-        Wait(0)
-        local ped = PlayerPedId()
-        local pos = GetEntityCoords(ped)
-        local hash = GetPedCurrentHeldWeapon(ped)
-        if IsWeaponLantern(hash) then
-            for _, v in ipairs(Config.MiningLocations) do
-                local distance = #(pos - v.coords)
-                if distance < 5.0 then
-                    Citizen.InvokeNative(0x2A32FAA57B937173, 0x07DCE236, v.coords-0.9, 0, 0, 0, 0, 0, 0, 1.0, 1.0, 1.0, 99, 23, 23, 150, 0, 0, 2, 0, 0, 0, 0)
-                end
+        if LocalPlayer.state.isLoggedIn then
+            local pos = GetEntityCoords(PlayerPedId())
+            local best, bestD = nil, Config.Security.promptDistance + 1.5
+            for id, v in pairs(veins) do
+                local d = #(pos - v.coords)
+                if d < bestD then best, bestD = id, d end
             end
+            if best ~= nearVein then nearVein = best if best then card(veins[best]) else page('hide') end end
         end
+        Wait(1000)
     end
 end)
-
-Citizen.CreateThread(function ()
-    AddBlipForCoords(Lang:t('mining.entrance'), GetHashKey('blip_gold'), Config.MineCord)
-
-    if next(Config.MiningLocations) then
-        for k, v in pairs(Config.MiningLocations) do
-            exports['lxr-core']:createPrompt('Zone_'..k, v.coords, Config.Keys.Action, Lang:t('mining.start') .. 'Zone_'..k, {
-                type = 'client',
-                event = 'lxr-mining:client:Mining',
-                args = {k},
-            })
-            AddBlipForCoords(Lang:t('mining.zone'), GetHashKey('blip_deadeye_cross'), v.coords)
-        end
-    end
+AddStateBagChangeHandler(nil, 'global', function(_, key, value)
+    local id = key:match('^mine:(.+)$')
+    if id and id == nearVein and veins[id] then card(veins[id]) end
 end)
 
---#endregion
+AddEventHandler('onResourceStop', function(res) if res == GetCurrentResourceName() then for id in pairs(veins) do exports['lxr-interact']:Remove('lxr-mining:' .. id) end for _, p in ipairs(Config.Pans) do exports['lxr-interact']:Remove('lxr-mining:pan:' .. p.id) end end end)
+exports('Busy', function() return busy end)

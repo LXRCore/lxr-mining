@@ -1,42 +1,12 @@
---[[
-    🐺 LXR Mining System — locales/en.lua
-    ═══════════════════════════════════════════════════════════════════════════════
-    Server:    The Land of Wolves 🐺
-    Developer: iBoss21 / The Lux Empire
-    Website:   https://www.wolves.land
-    Discord:   https://discord.gg/CrKcWdfd3A
-    Store:     https://theluxempire.tebex.io
-    ═══════════════════════════════════════════════════════════════════════════════
-    © 2026 iBoss21 / The Lux Empire | wolves.land | All Rights Reserved
-]]
+--[[ ═══════════════════════════════════════════════════════════════════════════
+     LXR-MINING — Locale: English (canonical)
+     Developer   : iBoss21 | Brand : LXRCore | https://www.lxrcore.com
+     © 2026 iBoss21 / LXRCore — All Rights Reserved
+     ═══════════════════════════════════════════════════════════════════════════ ]]
 
-local Translations = {
-    menu = {
-        select = 'Select Goods',
-        amount = 'Item Amount',
-        open = 'talk with '
-    },
-    error = {
-        amount = 'you should put a value for %{text}',
-        pickaxe = 'you don\'t have a pickaxe!',
-        mined = 'this zone is already mined',
-        general = 'there was an error!',
-        add_item = 'there was an error during add item!',
-        remove_item = 'there was an error during removing item!',
-        money = 'you do not have enough money!'
-    },
-    mining = {
-        entrance = 'Mine Entrance',
-        zone = 'Mining Zone',
-        start = 'to start mining ',
-        progress = 'Mining in Progress..',
-        success = 'you have found %{text}',
-        selling = 'you have sell %{amount} qty of %{item}',
-        bought = 'you have bought %{amount} qty of %{item}'
-    }
-}
-
-Lang = Locale:new({
-    phrases = Translations,
-    warnOnMissing = true
+Locale.Register('en', {
+    error = { rate = 'Slow down.', invalid = 'Not here.', too_far = 'Get closer.', worked_out = 'This vein is worked out. Give it time.', no_tool = 'You need a %{label}.', soon = 'Let the silt settle first.', heavy = 'Too heavy to carry: %{label}.' },
+    info = { nothing = 'Nothing but rock.', found = 'You come away with %{amount} × %{label}.' },
+    table = { coal = 'Coal seam', iron = 'Iron vein', copper = 'Copper vein', silver = 'Silver vein', cave = 'Cave floor', gravel = 'Gravel bar' },
+    ui = { swing = 'Swing the pickaxe', pan = 'Pan the gravel', rich = 'rich', thin = 'thinning', worked_out = 'worked out' },
 })

@@ -1,322 +1,89 @@
 --[[
-    ██╗     ██╗  ██╗██████╗        ███╗   ███╗██╗███╗   ██╗██╗███╗   ██╗ ██████╗
+    ██╗     ██╗  ██╗██████╗       ███╗   ███╗██╗███╗   ██╗██╗███╗   ██╗ ██████╗
     ██║     ╚██╗██╔╝██╔══██╗      ████╗ ████║██║████╗  ██║██║████╗  ██║██╔════╝
     ██║      ╚███╔╝ ██████╔╝█████╗██╔████╔██║██║██╔██╗ ██║██║██╔██╗ ██║██║  ███╗
     ██║      ██╔██╗ ██╔══██╗╚════╝██║╚██╔╝██║██║██║╚██╗██║██║██║╚██╗██║██║   ██║
     ███████╗██╔╝ ██╗██║  ██║      ██║ ╚═╝ ██║██║██║ ╚████║██║██║ ╚████║╚██████╔╝
     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝      ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═══╝ ╚═════╝
 
-    🐺 LXR Mining System — The Land of Wolves
+    LXR Core - Mining
 
-    An immersive, multi-framework mining resource for RedM.
-    Players mine at designated quarry locations, process raw ore, and sell
-    refined materials through a vendor NPC — all with full framework support.
+    A pickaxe against a vein, a pan in a gravel bar. Veins are points with a
+    weighted table of what is in the rock and a stock of charges that comes
+    back with time — the server keeps the stock, so a rich vein is rich for
+    the whole server, not for each client that looks at it. Everything that
+    comes out is a core catalog material, sold on the general store's shelf.
 
-    ═══════════════════════════════════════════════════════════════════════════════
-    SERVER INFORMATION
-    ═══════════════════════════════════════════════════════════════════════════════
+    Brand:       LXRCore — Lux Empire eXperience RedM Core
+    Product:     wolves.land / The Land of Wolves
+    Developer:   iBoss21 / LXRCore
+    Website:     https://www.lxrcore.com
+    Discord:     https://discord.gg/ZHMKVYyhBa (development)
+    GitHub:      https://github.com/LXRCore
 
-    Server:      The Land of Wolves 🐺
-    Developer:   iBoss21 / The Lux Empire
-    Website:     https://www.wolves.land
-    Discord:     https://discord.gg/CrKcWdfd3A
-    Store:       https://theluxempire.tebex.io
+    Version: 3.0.0
+    Performance Target: 0.00 ms idle (interact points; one 60 s regeneration tick on the server)
 
-    ═══════════════════════════════════════════════════════════════════════════════
-
-    Version: 1.0.0
-    Performance Target: Optimized for minimal server overhead and client FPS impact
-
-    Tags: RedM, Mining, Economy, SeriousRP, Whitelist, LXRCore, wolves.land
-
-    Framework Support:
-    - LXR Core  (Primary)
-    - RSG Core  (Primary)
-    - VORP Core (Supported / Legacy)
-    - RedEM:RP  (Optional)
-    - QBR Core  (Optional)
-    - QR Core   (Optional)
-    - Standalone (Fallback)
-
-    ═══════════════════════════════════════════════════════════════════════════════
-    CREDITS
-    ═══════════════════════════════════════════════════════════════════════════════
-
-    Script Author: iBoss21 / The Lux Empire for The Land of Wolves
-
-    © 2026 iBoss21 / The Lux Empire | wolves.land | All Rights Reserved
+    © 2026 iBoss21 / LXRCore | lxrcore.com | All Rights Reserved
 ]]
 
--- ═══════════════════════════════════════════════════════════════════════════════
--- 🐺 RESOURCE NAME PROTECTION - RUNTIME CHECK
--- ═══════════════════════════════════════════════════════════════════════════════
-
-local REQUIRED_RESOURCE_NAME = "lxr-mining"
-local currentResourceName = GetCurrentResourceName()
-
-if currentResourceName ~= REQUIRED_RESOURCE_NAME then
-    error(string.format([[
-
-        ═══════════════════════════════════════════════════════════════════════════════
-        ❌ CRITICAL ERROR: RESOURCE NAME MISMATCH ❌
-        ═══════════════════════════════════════════════════════════════════════════════
-
-        Expected: %s
-        Got: %s
-
-        This resource is branded and must maintain the correct name.
-        Rename the folder to "%s" to continue.
-
-        🐺 wolves.land - The Land of Wolves
-
-        ═══════════════════════════════════════════════════════════════════════════════
-
-    ]], REQUIRED_RESOURCE_NAME, currentResourceName, REQUIRED_RESOURCE_NAME))
-end
-
-Config = {}
+Config = Config or {}
 
 -- ████████████████████████████████████████████████████████████████████████████████
--- ████████████████████████ SERVER BRANDING & INFO ████████████████████████████████
+-- ████████████████████████ LANGUAGE ██████████████████████████████████████████████
 -- ████████████████████████████████████████████████████████████████████████████████
+Config.Lang = 'en'
 
-Config.ServerInfo = {
-    name      = 'The Land of Wolves 🐺',
-    type      = 'Serious Hardcore Roleplay',
-    access    = 'Discord & Whitelisted',
-
-    -- Contact & Links
-    website   = 'https://www.wolves.land',
-    discord   = 'https://discord.gg/CrKcWdfd3A',
-    github    = 'https://github.com/iBoss21',
-    store     = 'https://theluxempire.tebex.io',
-
-    -- Developer Info
-    developer = 'iBoss21 / The Lux Empire',
-
-    -- Tags
-    tags = {'RedM', 'Mining', 'Economy', 'SeriousRP', 'Whitelist', 'wolves.land'}
+-- ████████████████████████████████████████████████████████████████████████████████
+-- ████████████████████████ ORE TABLES ════════════════════════════════════════════
+-- ████████████████████████████████████████████████████████████████████████████████
+-- weight is relative; amount is min..max per swing. `nothing` is the weight of an empty swing.
+Config.Tables = {
+    coal   = { nothing = 2, { item = 'coal', weight = 8, min = 1, max = 3 }, { item = 'stone', weight = 3, min = 1, max = 2 }, { item = 'iron_ore', weight = 2, min = 1, max = 1 } },
+    iron   = { nothing = 2, { item = 'iron_ore', weight = 7, min = 1, max = 2 }, { item = 'stone', weight = 4, min = 1, max = 2 }, { item = 'coal', weight = 2, min = 1, max = 1 }, { item = 'copper_ore', weight = 1, min = 1, max = 1 } },
+    copper = { nothing = 2, { item = 'copper_ore', weight = 6, min = 1, max = 2 }, { item = 'lead_ore', weight = 3, min = 1, max = 2 }, { item = 'stone', weight = 3, min = 1, max = 2 } },
+    silver = { nothing = 4, { item = 'silver_ore', weight = 3, min = 1, max = 1 }, { item = 'lead_ore', weight = 4, min = 1, max = 2 }, { item = 'stone', weight = 4, min = 1, max = 2 }, { item = 'gold_ore', weight = 1, min = 1, max = 1 } },
+    cave   = { nothing = 3, { item = 'saltpeter', weight = 4, min = 1, max = 2 }, { item = 'sulfur', weight = 3, min = 1, max = 2 }, { item = 'stone', weight = 4, min = 1, max = 3 } },
+    gravel = { nothing = 6, { item = 'gold_dust', weight = 4, min = 1, max = 2 }, { item = 'gold_nugget', weight = 1, min = 1, max = 1 } },
 }
 
 -- ████████████████████████████████████████████████████████████████████████████████
--- ████████████████████████ FRAMEWORK CONFIGURATION ███████████████████████████████
+-- ████████████████████████ MINES ═════════════════════════════════════════════════
 -- ████████████████████████████████████████████████████████████████████████████████
+-- each vein: a point, an ore table, charges (swings before it is worked out) and regenMinutes per charge
+Config.Mines = {
+    { id = 'annesburg', label = 'Annesburg Mine', blip = true, coords = vector3(2887.40, 1385.10, 66.70), veins = {
+        { id = 'ann1', coords = vector3(2894.20, 1391.60, 66.90), table = 'coal', charges = 30, regenMinutes = 2 },
+        { id = 'ann2', coords = vector3(2901.80, 1379.30, 67.10), table = 'coal', charges = 30, regenMinutes = 2 },
+        { id = 'ann3', coords = vector3(2879.60, 1397.20, 66.40), table = 'iron', charges = 24, regenMinutes = 3 },
+    } },
+    { id = 'beryl', label = 'Beryl\'s Dream', blip = true, coords = vector3(-1462.30, 1330.60, 232.50), veins = {
+        { id = 'ber1', coords = vector3(-1468.90, 1336.20, 232.80), table = 'iron', charges = 24, regenMinutes = 3 },
+        { id = 'ber2', coords = vector3(-1455.10, 1324.70, 233.10), table = 'copper', charges = 20, regenMinutes = 4 },
+    } },
+    { id = 'gaptooth', label = 'Gaptooth Breach', blip = true, coords = vector3(-4033.80, -2934.10, -14.20), veins = {
+        { id = 'gap1', coords = vector3(-4040.20, -2928.60, -13.90), table = 'silver', charges = 16, regenMinutes = 6 },
+        { id = 'gap2', coords = vector3(-4027.50, -2941.30, -14.40), table = 'silver', charges = 16, regenMinutes = 6 },
+        { id = 'gap3', coords = vector3(-4048.90, -2939.80, -14.60), table = 'copper', charges = 20, regenMinutes = 4 },
+    } },
+    { id = 'roanoke', label = 'Roanoke cave', blip = false, coords = vector3(2432.70, 1147.40, 79.20), veins = {
+        { id = 'roa1', coords = vector3(2437.10, 1152.80, 79.40), table = 'cave', charges = 20, regenMinutes = 4 },
+    } },
+}
 
---[[
-    Framework Priority (in order):
-    1. LXR-Core  (Primary)
-    2. RSG-Core  (Primary)
-    3. VORP Core (Supported / Legacy)
-    4. RedEM:RP  (Optional - if detected)
-    5. QBR-Core  (Optional - if detected)
-    6. QR-Core   (Optional - if detected)
-    7. Standalone (Fallback)
-]]
-
-Config.Framework = 'auto' -- 'auto' or manual: 'lxr-core', 'rsg-core', 'vorp_core', 'redem_roleplay', 'qbr-core', 'qr-core', 'standalone'
-
--- Framework-specific settings
-Config.FrameworkSettings = {
-    ['lxr-core'] = {
-        resource    = 'lxr-core',
-        inventory   = 'lxr-inventory',
-        events = {
-            server   = 'lxr-mining:server:%s',
-            client   = 'lxr-mining:client:%s',
-            callback = 'LXRCore:%s'
-        }
-    },
-    ['rsg-core'] = {
-        resource    = 'rsg-core',
-        inventory   = 'rsg-inventory',
-        events = {
-            server   = 'lxr-mining:server:%s',
-            client   = 'lxr-mining:client:%s',
-            callback = 'RSGCore:%s'
-        }
-    },
-    ['vorp_core'] = {
-        resource    = 'vorp_core',
-        inventory   = 'vorp_inventory',
-        events = {
-            server   = 'lxr-mining:server:%s',
-            client   = 'lxr-mining:client:%s'
-        }
-    },
-    ['redem_roleplay'] = {
-        resource    = 'redem_roleplay',
-        inventory   = 'redem_inventory',
-        events = {
-            server   = 'lxr-mining:server:%s',
-            client   = 'lxr-mining:client:%s'
-        }
-    },
-    ['qbr-core'] = {
-        resource    = 'qbr-core',
-        inventory   = 'qbr-inventory',
-        events = {
-            server   = 'lxr-mining:server:%s',
-            client   = 'lxr-mining:client:%s'
-        }
-    },
-    ['qr-core'] = {
-        resource    = 'qr-core',
-        inventory   = 'qr-inventory',
-        events = {
-            server   = 'lxr-mining:server:%s',
-            client   = 'lxr-mining:client:%s'
-        }
-    },
-    ['standalone'] = {
-        -- Minimal functionality without framework dependency
-        inventory   = 'none'
-    }
+-- gravel bars for the pan (per-player cooldown, the water never runs out)
+Config.Pans = {
+    { id = 'dakota', label = 'Dakota River bar', coords = vector3(-150.60, 620.30, 108.40), table = 'gravel' },
+    { id = 'kamassa', label = 'Kamassa gravel', coords = vector3(2007.20, -1108.60, 41.80), table = 'gravel' },
+    { id = 'sanluis', label = 'San Luis bank', coords = vector3(-4870.40, -3210.90, -11.60), table = 'gravel' },
 }
 
 -- ████████████████████████████████████████████████████████████████████████████████
--- ████████████████████████ KEY BINDINGS ██████████████████████████████████████████
+-- ████████████████████████ THE WORK ══════════════════════════════════════════════
 -- ████████████████████████████████████████████████████████████████████████████████
-
--- Customizable actions for player interaction
-Config.Keys = {
-    Action   = 0xCEFD9220, -- 'E' key — start mining / interact with zone
-    Interact = 0xF3830D8E  -- 'J' key — open NPC vendor menu
+Config.Work = {
+    pick = 'pickaxe', pickWear = 1, swingMs = 6000, swingScenario = 'WORLD_HUMAN_PICKAXE_WALL',
+    pan = 'gold_pan', panWear = 1, panMs = 8000, panCooldownMs = 20000, panScenario = 'WORLD_HUMAN_CROUCH_INSPECT',
 }
-
--- ████████████████████████████████████████████████████████████████████████████████
--- ████████████████████████ TIMING SETTINGS ███████████████████████████████████████
--- ████████████████████████████████████████████████████████████████████████████████
-
--- All times in milliseconds
-Config.MiningTimer  = 20 * 1000        -- 20 seconds — mining animation/progress duration
-Config.RefreshTimer = 30 * 60 * 1000   -- 30 minutes — reset mined zones (per client)
-
--- ████████████████████████████████████████████████████████████████████████████████
--- ████████████████████████ MINE ENTRANCE COORDINATES ████████████████████████████
--- ████████████████████████████████████████████████████████████████████████████████
-
--- Used for the mine-entrance blip on the map
-Config.MineCord = vector3(2789.1987, 1340.2327, 71.3155)
-
--- ████████████████████████████████████████████████████████████████████████████████
--- ████████████████████████ SMELTING / DROP ITEMS █████████████████████████████████
--- ████████████████████████████████████████████████████████████████████████████████
-
--- Min/Max define the random quantity range for each resource awarded after mining
-Config.SmeltingItems = {
-    iron   = { Min = 1, Max = 10 },
-    copper = { Min = 1, Max = 10 },
-    gold   = { Min = 1, Max = 10 },
-    coal   = { Min = 1, Max = 10 }
-}
-
--- ████████████████████████████████████████████████████████████████████████████████
--- ████████████████████████ MINING LOCATIONS ██████████████████████████████████████
--- ████████████████████████████████████████████████████████████████████████████████
-
--- Each entry defines an interactive mining zone; radius controls the trigger sphere
-Config.MiningLocations = {
-    { name = "Upper East Quarry",          coords = vector3(2747.63, 1388.7,  69.01), radius = 5.0 },
-    { name = "Upper Central Quarry",       coords = vector3(2746.66, 1379.09, 68.55), radius = 5.0 },
-    { name = "Lower East Quarry",          coords = vector3(2724.04, 1388.7,  68.82), radius = 5.0 },
-    { name = "Lower Central Quarry",       coords = vector3(2727.67, 1385.56, 69.22), radius = 5.0 },
-    { name = "Lower South Quarry",         coords = vector3(2723.16, 1375.39, 68.89), radius = 5.0 },
-    { name = "Central Quarry Entrance",    coords = vector3(2743.93, 1385.92, 68.7),  radius = 5.0 },
-    { name = "Northern Quarry",            coords = vector3(2760.84, 1402.35, 68.74), radius = 5.0 },
-    { name = "North Central Quarry",       coords = vector3(2760.91, 1395.98, 68.7),  radius = 5.0 },
-    { name = "North West Quarry",          coords = vector3(2771.02, 1382.77, 67.98), radius = 5.0 },
-    { name = "Western Quarry",             coords = vector3(2763.33, 1376.24, 67.83), radius = 5.0 },
-    { name = "South West Quarry",          coords = vector3(2754.61, 1358.63, 68.17), radius = 5.0 },
-    { name = "South Central Quarry",       coords = vector3(2752.92, 1368.36, 67.8),  radius = 5.0 },
-    { name = "Mid Western Quarry",         coords = vector3(2758.53, 1379.4,  68.24), radius = 5.0 },
-    { name = "Central Quarry",             coords = vector3(2757.53, 1382.55, 68.2),  radius = 5.0 },
-    { name = "Central Quarry East",        coords = vector3(2747.99, 1382.55, 68.61), radius = 5.0 },
-    { name = "Central Quarry North",       coords = vector3(2747.38, 1391.84, 68.76), radius = 5.0 },
-    { name = "North Central Quarry B",     coords = vector3(2761.37, 1390.62, 68.71), radius = 5.0 },
-    { name = "Upper Northern Quarry",      coords = vector3(2759.16, 1408.6,  68.5),  radius = 5.0 },
-    { name = "Far South Quarry",           coords = vector3(2728.11, 1329.45, 69.62), radius = 5.0 },
-    { name = "South Eastern Quarry",       coords = vector3(2731.87, 1332.42, 69.64), radius = 5.0 },
-    { name = "Deep South Quarry",          coords = vector3(2716.82, 1308.1,  69.78), radius = 5.0 },
-    { name = "South West Entrance Quarry", coords = vector3(2712.96, 1308.03, 69.77), radius = 5.0 },
-    { name = "South West Quarry B",        coords = vector3(2716.45, 1313.86, 69.73), radius = 5.0 },
-    { name = "Mid Central Quarry",         coords = vector3(2746.23, 1366.28, 68.42), radius = 5.0 }
-}
-
--- ████████████████████████████████████████████████████████████████████████████████
--- ████████████████████████ COLLECTION & SELLING ██████████████████████████████████
--- ████████████████████████████████████████████████████████████████████████████████
-
--- When true, players can select a quantity when selling items in bulk
-Config.CollectItems = true
-
--- ████████████████████████████████████████████████████████████████████████████████
--- ████████████████████████ NPC CONFIGURATION █████████████████████████████████████
--- ████████████████████████████████████████████████████████████████████████████████
-
-Config.Peds = {
-    Miners = {
-        Label  = 'Mining Vendor',
-        Hash   = 1543787725,
-        Coords = vector4(2789.31, 1336.87, 71.35, 9.15),
-
-        -- Items the NPC will purchase from players (item = price in cash)
-        Items = {
-            iron   = 100,
-            copper = 150,
-            gold   = 200,
-            coal   = 250
-        },
-
-        -- Items the NPC will sell to players (item = price in cash)
-        BuyableItems = {
-            pickaxe = 100
-        }
-    }
-}
-
--- ████████████████████████████████████████████████████████████████████████████████
--- ████████████████████████ DEBUG SETTINGS ████████████████████████████████████████
--- ████████████████████████████████████████████████████████████████████████████████
-
-Config.Debug = false -- Enable extra console output for development
-
--- ████████████████████████████████████████████████████████████████████████████████
--- ████████████████████████ END OF CONFIGURATION ██████████████████████████████████
--- ████████████████████████████████████████████████████████████████████████████████
-
--- Startup boot banner
-CreateThread(function()
-    Wait(500)
-    print([[
-
-        ═══════════════════════════════════════════════════════════════════════════════
-
-            ██╗     ██╗  ██╗██████╗        ███╗   ███╗██╗███╗   ██╗██╗███╗   ██╗ ██████╗
-            ██║     ╚██╗██╔╝██╔══██╗      ████╗ ████║██║████╗  ██║██║████╗  ██║██╔════╝
-            ██║      ╚███╔╝ ██████╔╝█████╗██╔████╔██║██║██╔██╗ ██║██║██╔██╗ ██║██║  ███╗
-            ██║      ██╔██╗ ██╔══██╗╚════╝██║╚██╔╝██║██║██║╚██╗██║██║██║╚██╗██║██║   ██║
-            ███████╗██╔╝ ██╗██║  ██║      ██║ ╚═╝ ██║██║██║ ╚████║██║██║ ╚████║╚██████╔╝
-            ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝      ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═══╝ ╚═════╝
-
-        ═══════════════════════════════════════════════════════════════════════════════
-        🐺 MINING SYSTEM - SUCCESSFULLY LOADED
-        ═══════════════════════════════════════════════════════════════════════════════
-
-        Version:    1.0.0
-        Server:     The Land of Wolves 🐺
-        Framework:  Auto-detect enabled
-        Zones:      ]] .. #Config.MiningLocations .. [[ mining zones configured
-        Resources:  iron · copper · gold · coal
-        Refresh:    ]] .. (Config.RefreshTimer / 60000) .. [[ minutes per zone reset
-        Debug:      ]] .. (Config.Debug and 'ENABLED' or 'DISABLED') .. [[
-
-        ═══════════════════════════════════════════════════════════════════════════════
-
-        Developer:  iBoss21 / The Lux Empire
-        Website:    https://www.wolves.land
-        Discord:    https://discord.gg/CrKcWdfd3A
-
-        ═══════════════════════════════════════════════════════════════════════════════
-    ]])
-end)
-
+Config.Security = { rateLimit = { windowMs = 2000, burst = 4 }, maxDistance = 3.5, promptDistance = 2.0 }
+Config.Debug = { printBanner = true, log = false }
