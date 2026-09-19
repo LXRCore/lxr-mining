@@ -62,7 +62,7 @@ CreateThread(function()
     for _, m in ipairs(Config.Mines) do
         if m.blip then
             local b = N(0x554D9D53F696D002, 1664425300, m.coords.x, m.coords.y, m.coords.z)
-            if b and b ~= 0 then N(0x74F74D3207ED525C, b, joaat('blip_mine'), true) N(0x9CB1A1623062F402, b, m.label) end
+            if b and b ~= 0 then N(0x74F74D3207ED525C, b, joaat('blip_mine'), true) if GetResourceState('lxr-mapcolor') == 'started' then pcall(function() N(0x662D364ABF16DE2F, b, exports['lxr-mapcolor']:modifier('craft')) end) end N(0x9CB1A1623062F402, b, m.label) end
         end
     end
 end)
