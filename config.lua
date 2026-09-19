@@ -84,6 +84,7 @@ Config.Pans = {
 Config.Work = {
     pick = 'pickaxe', pickWear = 1, swingMs = 6000, swingScenario = 'WORLD_HUMAN_PICKAXE_WALL',
     pan = 'gold_pan', panWear = 1, panMs = 8000, panCooldownMs = 20000, panScenario = 'WORLD_HUMAN_CROUCH_INSPECT',
+    breakBelow = 15, breakChance = 0.06,   -- a worn tool (durability under this) may snap on a swing; at 0 it is gone
 }
 Config.Security = { rateLimit = { windowMs = 2000, burst = 4 }, maxDistance = 3.5, promptDistance = 2.0 }
 Config.Debug = { printBanner = true, log = false }

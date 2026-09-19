@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.0.0 — 2026-09-19
+* Tools break: at zero durability the pickaxe or pan is gone; under `breakBelow` it may snap on a swing (`Config.Work.breakBelow / breakChance`); event `lxr:tool:broke`.
 * LXRCore v3 release line: every resource ships as 3.0.0 from here (the entries below are the road to it).
 
 ## 3.0.0 — 2026-09-18
